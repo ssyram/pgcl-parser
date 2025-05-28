@@ -68,11 +68,14 @@ Use + to separate parallel updates in a single command.
 This structure enables AI to generate an AST with nodes for modules, variables, commands (guards/updates), synchronization labels, and system composition rules.
 -}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Ast where
 import Data.Maybe (fromMaybe)
 import Data.List (nub)
 import Data.List.NonEmpty (groupBy)
 import qualified Data.List.NonEmpty as NE
+import Data.Ratio (denominator)
+import GHC.Real (numerator)
 
 -- | Model Type Declaration
 data ModelType = DTMC | CTMC | MDP | PTA | NonDeterministic
@@ -125,19 +128,18 @@ data Synchronization = Synchronization
 -- | Expressions
 data Expr
   = Var String
-  | ConstValue String
   | BinOp BinOp Expr Expr
   | UnOp UnOp Expr
   | Lit Literal
-  deriving (Show, Eq)
+  deriving (Show, Eq, Ord)
 
 type Literal = Rational
 
 data BinOp = Add | Sub | Mul | Div | And | Or | Eq | Neq | Lt | Gt | Le | Ge
-  deriving (Show, Eq)
+  deriving (Show, Eq, Ord)
 
 data UnOp = Not | Neg
-  deriving (Show, Eq)
+  deriving (Show, Eq, Ord)
 
 -- | Types
 data Type = BoolType | IntType | DoubleType | IntRangeType (Expr, Expr)
@@ -328,10 +330,6 @@ irAssignToStmt (IRAssignment v e) = SAssign v (exprToIExpr e)
 -- Convert Expr (from IR) to IExpr (target language)
 exprToIExpr :: Expr -> IExpr
 exprToIExpr (Var v) = EVar v
-exprToIExpr (ConstValue s) =
-  case reads s of
-    [(n, "")] -> ELit n
-    _         -> EVar s
 exprToIExpr (BinOp op e1 e2) = binOpToIExpr op (exprToIExpr e1) (exprToIExpr e2)
 exprToIExpr (UnOp op e) = unOpToIExpr op (exprToIExpr e)
 exprToIExpr (Lit n) = ELit n
@@ -425,3 +423,4 @@ commandMatchesGuards guards cmd =
 -- | Convert an Update to an IRAssignment
 toAssignment :: Update -> IRAssignment
 toAssignment upd = IRAssignment { irAssignVar = updateVar upd, irAssignExpr = updateExpr upd }
+
