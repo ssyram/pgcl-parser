@@ -1,0 +1,27 @@
+// property A: "Eventually the sender reports a certain unsuccessful transmission but the receiver got the complete file."
+// property A: true U(srep=NOK & rrep=OK & recv=true)
+//Pmax = 0.0[ true U srep=1 & rrep=3 & recv ]
+
+// property B: "Eventually the sender reports a certain successful transmission but the receiver did not get the complete file." 
+// Property B: we have correct result: 0
+// true U (srep=OK & !(rrep=OK) & recv=true)
+//, Pmax = 0.0 [true U srep=3  & rrep!=3 & recv ]
+
+// property 1: "Eventually the sender does not report a successful transmission." 
+// in N wird groesser, in MAX wird kleiner
+// Property 1: true U (s=error & T=true) <= 1.262E-05
+//Pmax<= 1.26E-05  [true U s=5 & T ]
+
+// property 2: "Eventually the sender reports an uncertainty on the success of the transmission." 
+// in N bleibt Konstante, in MAX wird kleiner 
+// Property 2: true U (s=error & T=true & srep=DK) 
+//, Pmax=? [true U s=5 & T & srep=2 ]
+
+// property 3: "Eventually the sender reports an unsuccessful transmission after more than 8 chunks have been sent successfully." 
+// Property 3: true U (s=error & T=true & srep=NOK & i>8) 
+//, Pmax=? [ true U s=5 & T & srep=1 & i > 8  ]
+
+
+// property 4: "Eventually the receiver does not receive any chunk and the sender tried to send a chunk."
+// Property 4: true U (!(srep=0) & T=true & recv=false) 1.6E-07)
+Pmax <= 0.0 [ true U srep!=0 & T& !recv]

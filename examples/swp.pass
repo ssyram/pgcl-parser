@@ -1,0 +1,132 @@
+// Sliding window protocol (go-back(n))
+// Example extracted from Tanenbaum's Network book
+
+// for experimentation: the other file contains
+//                      a good choice of predicates that bring down the probability sufficiently
+
+
+const N = 4;
+
+const TIMEOUT = 8;
+
+//
+//
+module sender
+	sstate : [0..1];
+	// control state of sender
+	// 0 ... send & wait for ack
+	// 1 ... timeout / retransmit
+
+	nextseqnum : int;
+	base : int;
+	clock : int;
+
+	// number of packages that have been sent
+	sent : int;
+
+// state 1 ... send & wait for acknowledgment
+// __________________________________________
+// (1) send first package
+// (2) start the timer
+[data_s2c] sstate = 0 & nextseqnum = base -> (clock'=0) & (sent'=sent+1) & (nextseqnum'=nextseqnum + 1);
+
+// timeout has happened
+[] sstate = 0 & clock>=TIMEOUT -> (sstate'=1);
+
+// sending some package
+[data_s2c] sstate = 0 & nextseqnum < base + N - 1 & clock<TIMEOUT -> (nextseqnum'=nextseqnum + 1) &
+ (clock'=clock+1) & (sent'=sent+1);
+
+[data_s2c] sstate = 0 & nextseqnum = base + N - 1 & clock<TIMEOUT -> (nextseqnum'=nextseqnum + 1) & (sent'=sent+1);
+
+// getting acknowledgement
+[ack_c2s]  sstate = 0 & clock<TIMEOUT  -> (base'= ack_nr + 1) & (clock'=0);
+
+// timeout state ... handle timeout situation
+// ___________________________________________
+[reset] sstate = 1 -> (nextseqnum'=base) & (sstate'=0) & (clock'=0);
+
+endmodule
+
+//
+// channel of the sender
+//
+module channel1
+	cstate1 : [0..2];
+	// 0 ... wait
+	// 1 ... send data to receiver ?
+	// 2 ... send data to receiver
+
+	// buffer contents
+	packet : int;
+[data_s2c] cstate1 = 0 -> (packet'=nextseqnum) & (cstate1'=1);
+[] cstate1=1 -> 0.98: (cstate1'=2) + 0.02: (cstate1'=0);
+[data_c2r] cstate1=2 -> (cstate1'=0);
+
+endmodule
+
+//
+// channel of the receiver
+//
+module channel2
+
+	cstate2 : [0..2];
+	// 0 ... wait
+	// 1 ... send ack to sender ?
+	// 2 ... send ack
+
+	// belongs to channel2
+        ack_nr : int;
+
+
+	
+[ack_r2c] cstate2=0 -> (ack_nr'=expected) & (cstate2'=1);
+[] cstate2=1 -> 0.98: (cstate2'=2) + 0.02: (cstate2'=0);
+[ack_c2s] cstate2 = 2 -> (cstate2'=0);
+endmodule
+
+module receiver
+	rstate : [0..1];
+	// 0 ... wait
+	// 1 ... ack
+// belongs to receiver
+// only visible to channel and receiver
+expected : int;
+
+
+
+// read package
+[data_c2r] rstate = 0 & packet = expected -> (expected'= expected + 1) & (rstate'=1);
+[ack_r2c] rstate=1 -> (rstate'=0);
+endmodule
+
+
+
+init
+
+ack_nr = -1 &
+sent = 0 &
+expected = 0 &
+base = 0 &
+nextseqnum = 0 &
+clock = 0 &
+sstate = 0 &
+cstate1 = 0 &
+cstate2 = 0 &
+rstate = 0 &
+packet = 0
+endinit
+
+/* the following are control predicates */
+pred
+  sstate = 0
+, sstate = 1
+, cstate1 = 0
+, cstate1 = 1
+, cstate1 = 2
+, cstate2 = 0
+, cstate2 = 1
+, cstate2 = 2
+, rstate = 0
+, rstate = 1
+;

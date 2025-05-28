@@ -1,0 +1,3 @@
+label "k" = 3;
+
+Pmax=? [ true U bc1=k | bc2=k ]

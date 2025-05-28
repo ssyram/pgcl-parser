@@ -1,0 +1,5 @@
+// property 1: "Eventually the sender does not report a successful transmission." 
+// in N wird groesser, in MAX wird kleiner
+// Property 1: true U (s=error & T=true) <= 1.262E-05
+Pmax<= 4.48E-08  [true U s=5 & T ]
+

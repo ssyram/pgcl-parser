@@ -1,0 +1,3 @@
+label "k" = 3;
+
+Pmin=? [ true U bc1=k | bc2=k ]
